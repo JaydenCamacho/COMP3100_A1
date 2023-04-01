@@ -19,22 +19,28 @@ public class MyClient {
 
             dout.write(("REDY\n").getBytes());
             String str3 = (String) dis.readLine();
-            System.out.println("Server= " + str3);
-            String[] splitStr = str3.split(" ");
-            
-            dout.write(("GETS Capable " + splitStr[4] + " " + splitStr[5] + " " + splitStr[6] +"\n").getBytes());
-	    String str4=(String)dis.readLine();
-	    System.out.println("message= "+str4);
-	    String[] splitStr2 = str4.split(" ");
+
+            //while(!str3.equals("NONE")) {
+                System.out.println("Server= " + str3);
+                String[] splitStr = str3.split(" ");
+                dout.write(("GETS Capable " + splitStr[4] + " " + splitStr[5] + " " + splitStr[6] +"\n").getBytes());
+                String str4=(String)dis.readLine();
+                System.out.println("message= "+str4);
+                String[] splitStr2 = str4.split(" ");
+
+                int numberOfServers = Integer.parseInt(splitStr2[1]);
 	    
-	    int numberOfServers = Integer.parseInt(splitStr2[1]);
-	    
-	    String str5;
-	    for(int i = 0; i < numberOfServers; i++) {
-	   	dout.write(("OK\n").getBytes());
-	    	str5=(String)dis.readLine();
-	    	System.out.println("message= "+str5);
-	    }
+	            String str5;
+                String[] splitStr3;
+                int[] serverSize = new int[numberOfServers];
+                for(int i = 0; i < numberOfServers; i++) {
+	   	            dout.write(("OK\n").getBytes());
+	    	        str5=(String)dis.readLine();
+                    splitStr3 = str5.split(" ");
+                    serverSize[i] = Integer.parseInt(splitStr3[4]);
+	    	        System.out.println("message= "+serverSize[i]);
+	            }
+          //  }
             dout.flush();
             dout.close();
             s.close();
