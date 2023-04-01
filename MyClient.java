@@ -38,8 +38,20 @@ public class MyClient {
 	    	        str5=(String)dis.readLine();
                     splitStr3 = str5.split(" ");
                     serverSize[i] = Integer.parseInt(splitStr3[4]);
+                    	//System.out.println("message= "+str5);
 	    	        System.out.println("message= "+serverSize[i]);
 	            }
+                int largestServer = serverSize[0];
+                int numberOfLargeServers = 0;
+                for(int i = 1; i < serverSize.length; i++) {
+                    if(serverSize[i] > serverSize[i-1]) {
+                        largestServer = serverSize[i];
+                        numberOfLargeServers = 1;
+                    } else {
+                        numberOfLargeServers++;
+                    }
+                }
+                System.out.println("message= "+ numberOfLargeServers);
           //  }
             dout.flush();
             dout.close();
