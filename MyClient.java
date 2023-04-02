@@ -1,83 +1,105 @@
-import java.io.*;
-import java.net.*;
+    import java.io.*;
+    import java.net.*;
 
-public class MyClient {
-    public static void main(String[] args) {
-        try {
-            Socket s = new Socket("localhost", 50000);
-            DataOutputStream dout = new DataOutputStream(s.getOutputStream());
-            BufferedReader dis = new BufferedReader(new InputStreamReader(s.getInputStream()));
+    import javax.xml.crypto.Data;
 
-            dout.write(("HELO\n").getBytes());
-            String str = (String) dis.readLine();
-            System.out.println("Server= " + str);
+    public class MyClient {
+        public static void main(String[] args) {
+            int[] serverID = null;
+            String[] serverNames = null;
+            boolean serverInformation = false;
+            try {
+                Socket s = new Socket("localhost", 50000);
+                DataOutputStream dout = new DataOutputStream(s.getOutputStream());
+                BufferedReader dis = new BufferedReader(new InputStreamReader(s.getInputStream()));
 
-            String username = System.getProperty("user.name");
-            dout.write(("AUTH" + username + "\n").getBytes());
-            String str2 = (String) dis.readLine();
-            System.out.println("Server= " + str2);
+                dout.write(("HELO\n").getBytes());
+                String str = (String) dis.readLine();
+                // System.out.println("Server= " + str);
 
-            dout.write(("REDY\n").getBytes());
-            String str3 = (String) dis.readLine();
+                String username = System.getProperty("user.name");
+                dout.write(("AUTH " + username + "\n").getBytes());
+                String lastMessage = (String) dis.readLine();
+                // System.out.println("Server= " + str2);
+                
+                int LRRIndex = 0;
+                int numberOfLargeServers = 1;
+                ServerDetails[] servers;
 
-            System.out.println("Server= " + str3);
-            String[] splitStr = str3.split(" ");
-            dout.write(("GETS Capable " + splitStr[4] + " " + splitStr[5] + " " + splitStr[6] + "\n").getBytes());
-            String str4 = (String) dis.readLine();
-            System.out.println("message= " + str4);
-            String[] splitStr2 = str4.split(" ");
+                while(!lastMessage.equals("NONE")) {
+                    dout.write(("REDY\n").getBytes());
+                    lastMessage = (String) dis.readLine();
+                    String[] lastMessageSplit = lastMessage.split(" ");
+                    if(!serverInformation) {
+                        dout.write(("GETS Capable " + lastMessageSplit[4] + " " + lastMessageSplit[5] + " " + lastMessageSplit[6] + "\n").getBytes());
+                        String data = (String) dis.readLine();
+                        String[] dataSplit = data.split(" ");
+                        int totalServers = Integer.parseInt(dataSplit[1]);
 
-            int numberOfServers = Integer.parseInt(splitStr2[1]);
-            // Puts all server sizes into an int array
-            String str5;
-            String[] splitStr3;
-            int[] serverSize = new int[numberOfServers];
-            String[] allServerNames = new String[numberOfServers];
-            int[] allServerID = new int[numberOfServers];
-            for (int i = 0; i < numberOfServers; i++) {
-                dout.write(("OK\n").getBytes());
-                str5 = (String) dis.readLine();
-                splitStr3 = str5.split(" ");
-                serverSize[i] = Integer.parseInt(splitStr3[4]);
-                allServerNames[i] = splitStr3[0];
-                allServerID[i] = Integer.parseInt(splitStr3[1]);
-               // System.out.println("message= " + str5);
-            }
+                        dout.write(("OK\n").getBytes());
+                        String serverRecord = (String) dis.readLine();
+                        int largestServer = 0;
+                        String[] splitServerRecord;
 
-            // Records an int with the number of largest servers
-            int largestServer = serverSize[0];
-            int numberOfLargeServers = 0;
-            for (int i = 1; i < serverSize.length; i++) {
-                if (serverSize[i] > serverSize[i - 1]) {
-                    largestServer = serverSize[i];
-                    numberOfLargeServers = 1;
-                } else {
-                    numberOfLargeServers++;
+                        servers = new ServerDetails[totalServers];
+                        for(int i = 0; i < totalServers; i++) {
+                            splitServerRecord = serverRecord.split(" ");
+                            servers[i] = new ServerDetails(splitServerRecord[0], Integer.parseInt(splitServerRecord[1]), Integer.parseInt(splitServerRecord[4]));
+                            if(i >= 1) {
+                                if(servers[i].serverCores > servers[i-1].serverCores) {
+                                    largestServer = servers[i].serverCores;
+                                    numberOfLargeServers = 1;
+                                } else {
+                                    numberOfLargeServers++;
+                                }
+                            } else {
+                                largestServer = servers[0].serverCores;
+                            }
+                            dout.write(("OK\n").getBytes());
+                            serverRecord = (String) dis.readLine();
+                        }
+                        int index = 0;
+                        serverNames = new String[numberOfLargeServers];
+                        serverID = new int[numberOfLargeServers];
+                        for (int i = 0; i < totalServers; i++) {
+                            if(servers[i].serverCores == largestServer) {
+                                serverID[index] = servers[i].serverID;
+                                serverNames[index] = servers[i].serverName;
+                                index++;
+                            }
+                        }
+                        serverInformation = true;
+                    }
+
+                    dout.write(("OK\n").getBytes());
+                    System.out.println("server1" + lastMessage);
+                    if (lastMessageSplit[0].equals("JOBN")) {
+                        dout.write(("SCHD " + lastMessageSplit[2] + " " + serverNames[LRRIndex] + " " + serverID[LRRIndex] + "\n").getBytes());
+                        LRRIndex++;
+                        if(LRRIndex >= numberOfLargeServers) {
+                            LRRIndex = 0;
+                        }
+                    }
                 }
+                
+                dout.write(("QUIT\n").getBytes());
+                dout.flush();
+                dout.close();
+                s.close();
+            } catch (Exception e) {
+                System.out.println(e);
             }
-            //Stores server name and ID in an array
-            String[] serverNames = new String[numberOfLargeServers];
-            int[] serverID = new int[numberOfLargeServers];
-            int index = 0;
-            for(int i = 0; i < serverSize.length; i++) {
-                if(serverSize[i] == largestServer) {
-                    serverNames[index] = allServerNames[i];
-                    serverID[index] = allServerID[i];
-                    index++;
-                }
-            }
-            for(int i = 0; i<serverNames.length; i++) {
-            	System.out.println("message= " + serverNames[i]);
-            	System.out.println("message= " + serverID[i]);
-            }
-            //while(!str3.equals("NONE")) {
-
-          //  }
-            dout.flush();
-            dout.close();
-            s.close();
-        } catch (Exception e) {
-            System.out.println(e);
         }
     }
-}
+
+    class ServerDetails {
+        public String serverName;
+        public int serverID;
+        public int serverCores;
+
+        public ServerDetails(String serverName, int serverID, int serverCores){
+            this.serverName = serverName;
+            this.serverID = serverID;
+            this.serverCores = serverCores;
+        }
+    }
