@@ -12,7 +12,7 @@ public class MyClient {
             Socket s = new Socket("localhost", 50000);
             DataOutputStream dout = new DataOutputStream(s.getOutputStream());
             BufferedReader dis = new BufferedReader(new InputStreamReader(s.getInputStream()));
-
+	    //Client Server handshake
             dout.write(("HELO\n").getBytes());
             String str = (String) dis.readLine();
 
@@ -40,6 +40,7 @@ public class MyClient {
                 String[] splitServerRecord;
                 servers = new ServerDetails[totalServers];
                 ServerDetails largestServer = null;
+                // Puts all servers into a ServerDetails object and determines the amount of largest servers there are
                 for (int i = 0; i < totalServers; i++) {
                     serverRecord = (String) dis.readLine();
                     splitServerRecord = serverRecord.split(" ");
@@ -61,6 +62,7 @@ public class MyClient {
                 int index = 0;
                 serverNames = new String[numberOfLargeServers];
                 serverID = new int[numberOfLargeServers];
+                // Stores the required servernames and serverIDs in arrays.
                 for (int i = 0; i < totalServers; i++) {
                     if (index >= 1) {
                         if (servers[i].serverCores == largestServer.serverCores
@@ -79,6 +81,7 @@ public class MyClient {
             }
             dout.write(("OK\n").getBytes());
             String newMessage = (String) dis.readLine();
+            // Schedules jobs till there are no jobs left
             while (!lastMessage.equals("NONE")) {
                 if (lastMessageSplit[0].equals("JOBN")) {
                     dout.write(("SCHD " + lastMessageSplit[2] + " " + serverNames[LRRIndex] + " " + serverID[LRRIndex]
